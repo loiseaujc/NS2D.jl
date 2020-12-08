@@ -86,3 +86,14 @@ function dipole(p)
 
     return ω
 end
+
+function taylor_green(x, y)
+
+    # --> Taylor-Green vortices.
+    ω = -2 .* cos.(x') .* cos.(y)
+
+    # --> Map to spectral space.
+    ω = fft(ω)
+
+    return ω
+end

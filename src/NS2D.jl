@@ -17,8 +17,8 @@ module NS2D
 
     # --> Initial conditions related.
     include("ic.jl")
-    export isotropic_turbulence, isolated_vortex, dipole
-    
+    export isotropic_turbulence, isolated_vortex, dipole, taylor_green
+
     # --> Misc.
     include("utils.jl")
     export compute_reynolds_number, compute_velocity, compute_taylor_scale, mesh
