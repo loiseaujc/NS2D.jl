@@ -4,7 +4,7 @@ function compute_reynolds_number(ω, p)
      vx, vy = compute_velocity(ω, p)
 
      # --> Mean-squared amplitude.
-     E = mean(u.^2 + v.^2)
+     E = mean(vx.^2 + vy.^2)
 
      # --> Reynolds number.
      Re = √E * p.L / p.ν
@@ -42,13 +42,13 @@ function compute_velocity(ω, p)
     return real(vx), real(vy)
 end
 
-function compute_taylor_sale(ω, p)
+function compute_taylor_scale(ω, p)
 
     # --> Compute the velocity field.
     vx, vy = compute_velocity(ω, p)
 
     # --> Compute the amplitude of the velocity fluctuation.
-    E = mean(u.^2 + v.^2)
+    E = mean(vx.^2 + vy.^2)
 
     # --> Compute the amplitude of the vorticity fluctuation.
     Q = mean(real(ifft(ω)).^2)
