@@ -58,3 +58,14 @@ function compute_taylor_sale(ω, p)
 
     return λ
 end
+
+function mesh(p)
+
+    # --> Unpack the paramters.
+    @unpack L, n = p
+
+    # --> Construct the one-dimensional meshes.
+    x = y = LinRange(-L/2, L/2, n+1)[1:end-1]
+
+    return x, y
+end
