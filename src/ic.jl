@@ -63,6 +63,9 @@ function isolated_vortex(x, y ; x₀=0.0, y₀=0.0, Γ=1.0, r=1.0)
     r² = (x').^2 .+ y.^2
     ω = Γ/(π*r^2) .* exp.(-r²./r^2)
 
+    # --> Map to spectral space.
+    ω = fft(ω)
+
     return ω
 end
 
@@ -78,8 +81,8 @@ function dipole(p)
     ω = isolated_vortex(x, y ; Γ=1.0, r=0.5, y₀=0.5)
     ω += isolated_vortex(x, y ; Γ=-1.0, r=0.5, y₀=-0.5)
 
-    # --> Remove the mean and map to spectral space.
-    ω = fft(ω .- mean(ω))
+    # --> Remove the mean.
+    ω[1, 1] = 0.0
 
     # --> Scale vorticity field to the desired Reynolds number.
     ω = scale_by_re(ω, p)
@@ -87,7 +90,10 @@ function dipole(p)
     return ω
 end
 
-function taylor_green(x, y)
+function taylor_green(p)
+
+    # --> Construct the mesh.
+    x, y = mesh(p)
 
     # --> Taylor-Green vortices.
     ω = -2 .* cos.(x') .* cos.(y)
