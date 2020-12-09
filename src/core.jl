@@ -47,7 +47,13 @@ ctx(p::SimParams, α, x, y) = ctx(p.n, p.ν, α, α,
                                  x, zero(x), zero(x), zero(x), zero(x),
                                  y, zero(y), zero(y), zero(y), zero(y))
 
-function simulate(ω::Array{Complex{Float64},2}, p::SimParams, T ; alg=Tsit5())
+function simulate(
+    ω::Array{Complex{Float64},2},
+    p::SimParams,
+    T ;
+    alg=Tsit5(),
+    kwargs...
+    )
 
     # --> Get the simulation parameters.
     @unpack L, n, ν = p
@@ -63,7 +69,7 @@ function simulate(ω::Array{Complex{Float64},2}, p::SimParams, T ; alg=Tsit5())
     prob = ODEProblem(rhs!, ω, tspan, p)
 
     # --> Solve the ODE problem.
-    sol = solve(prob, alg=alg, save_everystep=false)
+    sol = solve(prob, alg ; kwargs...)
 
     return sol
 end

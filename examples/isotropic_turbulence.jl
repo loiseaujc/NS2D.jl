@@ -1,6 +1,7 @@
 using NS2D
 using Plots
 using FFTW
+using DifferentialEquations
 
 function plot_vorticity(ω, p)
 
@@ -44,7 +45,7 @@ function plot_velocity(ω, p)
     return fig
 end
 
-function main(; T=20)
+function main(; T=1)
 
     # --> Simulation parameters (default).
     p = SimParams()
@@ -54,11 +55,21 @@ function main(; T=20)
     spectrum(x) = one(x)
     ω = isotropic_turbulence(spectrum, p)
 
+    # --> Callback.
+    data = SavedValues(Float64, Float64)
+    cb = SavingCallback((u, t, integrator) -> maximum(abs.(u)), data)
+
+    # --> Keyword arguments for DifferentialEquations.jl
+    kwargs = Dict(
+        :saveat => 0:0.1:T,
+        :callback = > cb
+    )
+
     # --> Run the simulation.
-    sol = simulate(ω, p, T)
+    sol = simulate(ω, p, T ; kwargs...)
 
     # --> Plot the final condition.
-    ω = sol[2]
+    ω = sol[end]
     fig1 = plot_vorticity(ω, p)
     title!("Vorticity")
 
@@ -68,5 +79,5 @@ function main(; T=20)
     fig = plot(fig1, fig2, layout=(1, 2), size=(800, 400))
     display(fig)
 
-    return
+    return sol, data
 end

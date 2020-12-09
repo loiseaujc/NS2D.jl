@@ -24,13 +24,23 @@ If you nonetheless think that such a simple solver written in Julia could be ben
 
 NS2D solves the two-dimensional Navier-Stokes equations in a doubly-periodic domain using the vorticity-streamfunction formulation.
 Most of the computation is performed in spectral space while the non-linear advection term is computed in physical space using standard techniques for dealiasing.
-At its core, NS2D uses `FFTW.jl` with multi-threading and preallocated arrays for in-place fast Fourier transforms while time-integration is performed thanks to `DifferentialEquations.jl`.
+At its core, NS2D uses [FFTW.jl](https://github.com/JuliaMath/FFTW.jl) with multi-threading and preallocated arrays for in-place fast Fourier transforms while time-integration is performed thanks to [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl).
 
 ## Examples
 
 ### Taylor-Green vortices
 
-TBA
+In two dimensions, the [Taylor-Green vortices](https://en.wikipedia.org/wiki/Taylor%E2%80%93Green_vortex) are one of the few analytic solutions to the incompressible Navier-Stokes we know of.
+It is quite often used for testing and validation of the spatial and/or temporal accuracy of Navier-Stokes solvers.
+The figure below shows the initial vorticity field (left panel) and the maximum pointwise error over time between the analytic solution and the one simulated using NS2D (right panel).
+
+![](imgs/taylor_green_vortices.png)![](imgs/taylor_green_vortices_error.png)
+
+These results have been obtained with :
+- Viscosity `ν=1e-3`
+- Number of grid points per direction `n=128`
+- Fifth order accurate time-stepping with variable time step using `alg=Tsit5()` from [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl)
+
 
 ### Two-dimensional decaying isotropic turbulence
 
