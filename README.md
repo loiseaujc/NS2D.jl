@@ -32,14 +32,15 @@ At its core, NS2D uses [FFTW.jl](https://github.com/JuliaMath/FFTW.jl) with mult
 
 In two dimensions, the [Taylor-Green vortices](https://en.wikipedia.org/wiki/Taylor%E2%80%93Green_vortex) are one of the few analytic solutions to the incompressible Navier-Stokes we know of.
 It is quite often used for testing and validation of the spatial and/or temporal accuracy of Navier-Stokes solvers.
-The figure below shows the initial vorticity field (left panel) and the maximum pointwise error over time between the analytic solution and the one simulated using NS2D (right panel).
+The figure below shows the initial vorticity field (top panel) and the maximum pointwise error over time between the analytic solution and the one simulated using NS2D (bottom panel).
 
 ![](imgs/taylor_green_vortices.png)![](imgs/taylor_green_vortices_error.png)
 
 These results have been obtained with :
-- Viscosity `ν=1e-3`
-- Number of grid points per direction `n=128`
-- Fifth order accurate time-stepping with variable time step using `alg=Tsit5()` from [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl)
+- Viscosity `ν=1e-3`,
+- Number of grid points per direction `n=128`,
+- Fifth order accurate time-stepping with variable time step using `alg=Tsit5()` from [DifferentialEquations.jl](https://github.com/SciML/DifferentialEquations.jl),
+- Absolute and relative tolerances set to `abstol = 1e-8` and `reltol=1e-6`, respectively.
 
 
 ### Two-dimensional decaying isotropic turbulence
