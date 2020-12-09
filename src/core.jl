@@ -1,3 +1,11 @@
+"""
+    SimParams(L=2π, n=256, ν=1e-4)
+
+Parameters of the simulation. L denotes the size of the doubly
+periodic computational domain, n the number of grid points to
+discretize it in both direction and ν is the kinematic viscosity
+of the working fluid.
+"""
 @with_kw struct SimParams
     # --> Dimension of the domain.
     L::Float64 = 2π ; @assert L > 0
