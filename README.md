@@ -12,22 +12,21 @@
 
 ![Julia flow](imgs/anim_vorticity.gif)
 
-## Overview
 ---
+
+## Overview
 
 NS2D is a simple pseudo-spectral solver for the two-dimensional Navier-Stokes equations in a doubly periodic domain written in Julia.
 Its aim is primarily to get myself familiar with the Julia ecosystem for scientific computing as well as illustrating how pseudo-spectral solvers work for my students.
 If you nonetheless think that such a simple solver written in Julia could be beneficial for your research, please do not hesitate to use it, fork it and/or send pull requests !
 
 ## Method / Capabilities
----
 
 NS2D solves the two-dimensional Navier-Stokes equations in a doubly-periodic domain using the vorticity-streamfunction formulation.
 Most of the computation is performed in spectral space while the non-linear advection term is computed in physical space using standard techniques for dealiasing.
 At its core, NS2D uses `FFTW.jl` with multi-threading and preallocated arrays for in-place fast Fourier transforms while time-integration is performed thanks to `DifferentialEquations.jl`.
 
 ## Examples
----
 
 ### Taylor-Green vortices
 
@@ -42,7 +41,6 @@ TBA
 TBA
 
 ## Developments goals
----
 
 As stated, NS2D is primary a sandbox for me to get familiar with the Julia ecosystem and test some ideas.
 Below is a non-exhaustive lists of such ideas.
