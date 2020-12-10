@@ -1,3 +1,7 @@
+abstract type NS2DProblem{T<:Real} end
+
+findparams(::NS2DProblem{T}) where T = T
+
 """
     SimParams(L=2π, n=256, ν=1e-4)
 
@@ -10,75 +14,81 @@ of the working fluid.
     # --> Dimension of the domain.
     L::Float64 = 2π ; @assert L > 0
 
-    # --> Numbetr of grid points per direction.
+    # --> Number of grid points per direction.
     n::Int = 256 ; @assert mod(n, 2) == 0
 
     # --> Viscosity.
     ν::Float64 = 1e-4 ; @assert ν > 0
 end
 
-mutable struct ctx
+mutable struct UnforcedProblem{T} <: NS2DProblem{T}
     # --> Number of grid points.
     n::Int64
 
     # --> Viscosity.
-    ν::Float64
+    ν::T
 
     # --> Wavenumbers
-    α::Array{Float64,1}
-    β::Array{Float64,1}
+    α::Array{T,1}
+    β::Array{T,1}
+
+    # --> Initial condition.
+    ω₀::Array{Complex{T}, 2}
 
     # --> Workiing arrays for the computation of the advection term.
-    adv::Array{Complex{Float64},2}
-    ∂ω∂x::Array{Complex{Float64},2}
-    ∂ω∂y::Array{Complex{Float64},2}
-    u::Array{Complex{Float64},2}
-    v::Array{Complex{Float64},2}
+    adv::Array{Complex{T},2}
+    ∂ω∂x::Array{Complex{T},2}
+    ∂ω∂y::Array{Complex{T},2}
+    u::Array{Complex{T},2}
+    v::Array{Complex{T},2}
 
     # --> Working arrays for the computation of the dealiased advection term.
-    advp::Array{Complex{Float64},2}
-    ∂ω∂xp::Array{Complex{Float64},2}
-    ∂ω∂yp::Array{Complex{Float64},2}
-    up::Array{Complex{Float64},2}
-    vp::Array{Complex{Float64},2}
+    advp::Array{Complex{T},2}
+    ∂ω∂xp::Array{Complex{T},2}
+    ∂ω∂yp::Array{Complex{T},2}
+    up::Array{Complex{T},2}
+    vp::Array{Complex{T},2}
 end
 
-ctx(p::SimParams, α, x, y) = ctx(p.n, p.ν, α, α,
-                                 x, zero(x), zero(x), zero(x), zero(x),
-                                 y, zero(y), zero(y), zero(y), zero(y))
+function UnforcedProblem(p::SimParams, x::Array{Complex{T}, 2}) where T <: Real
 
-function simulate(
-    ω::Array{Complex{Float64},2},
-    p::SimParams,
-    T ;
-    alg=Tsit5(),
-    kwargs...
-    )
-
-    # --> Get the simulation parameters.
+    # --> Extract the parameters of the simulation.
     @unpack L, n, ν = p
 
-    # --> Streamwise wavenumbers.
+    # --> Compute the wavenumbers.
     α = fftfreq(n, n/L) * 2π
 
-    # --> Build the preallocated arrays.
-    p = ctx(p, α, zero(ω), zeros(eltype(ω), (3n÷2, 3n÷2)))
+    # --> Convert ν and α to whatever type T is.
+    ν = convert(T, ν)
+    α = convert(Array{T, 1}, α)
 
-    # --> Set the ODE problem.
-    tspan = (0.0, T)
-    prob = ODEProblem(rhs!, ω, tspan, p)
+    # --> Template for the padded arrays.
+    y = zeros(eltype(x), (3n÷2, 3n÷2))
 
-    # --> Solve the ODE problem.
+    # --> Return the container.
+    prob = UnforcedProblem(
+        n, ν, α, α, x,
+        zero(x), zero(x), zero(x), zero(x), zero(x),
+        zero(y), zero(y), zero(y), zero(y), zero(y)
+    )
+
+    return prob
+end
+
+
+function simulate(nsprob::UnforcedProblem, T ; alg=Tsit5(), kwargs...)
+
+    # --> Set the ODE Problem.
+    tspan = (zero(findparams(nsprob)), convert(findparams(nsprob), T))
+    prob = ODEProblem(unforced_dynamics!, copy(nsprob.ω₀), tspan, nsprob)
+
+    # --> Integrate forward in time.
     sol = solve(prob, alg ; kwargs...)
 
     return sol
 end
 
-function rhs!(
-    dΩ::Array{Complex{Float64},2},
-    Ω::Array{Complex{Float64},2},
-    p::ctx,
-    t)
+function unforced_dynamics!(dΩ::Array{Complex{T},2}, Ω::Array{Complex{T},2}, p::UnforcedProblem{T}, t::T) where T <: Real
 
     # --> Arrays for the computation of the advection term.
     adv, ∂ω∂x, ∂ω∂y, u, v = p.adv, p.∂ω∂x, p.∂ω∂y, p.u, p.v

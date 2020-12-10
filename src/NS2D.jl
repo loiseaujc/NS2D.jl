@@ -13,7 +13,7 @@ module NS2D
 
     # --> Computational core.
     include("core.jl")
-    export SimParams, rhs!, simulate
+    export SimParams, UnforcedProblem, unforced_dynamics!, simulate
 
     # --> Initial conditions related.
     include("ic.jl")
