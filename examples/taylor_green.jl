@@ -4,10 +4,10 @@ using FFTW
 using DifferentialEquations
 using Statistics
 
-function main(; n=256, ν=1e-3, T=10)
+function main(; n=128, ν=1e-3, T=10)
 
     # --> Parameters for the simulation.
-    p = SimParams(n=n, ν=ν)
+    p = SimParams(nx=ny=n, ν=ν)
 
     # --> Taylor-Green initial condition.
     ω₀ = convert(Array{Complex{Float32}, 2}, taylor_green(p))
@@ -44,8 +44,8 @@ function main(; n=256, ν=1e-3, T=10)
         x, y, real(ifft(ω₀)),
         c=:RdBu,
         clims=(-2, 2),
-        xlims=(-p.L/2, p.L/2),
-        ylims=(-p.L/2, p.L/2),
+        xlims=(-p.Lx/2, p.Lx/2),
+        ylims=(-p.Ly/2, p.Ly/2),
         aspect_ratio=:equal,
     )
 
@@ -56,7 +56,7 @@ function main(; n=256, ν=1e-3, T=10)
     p₂ = plot(
         data.t, data.saveval,
         xlims=(0, T),
-        ylims=(0, 1e-9),
+        # ylims=(0, 1e-9),
         legend=false,
         xlabel="Time",
         ylabel="Error",

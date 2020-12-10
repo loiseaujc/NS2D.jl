@@ -14,8 +14,8 @@ function plot_vorticity(ω, p)
         x, y, ω,
         aspect_ratio=:equal,
         c=cgrad(:RdBu),
-        xlims=(-p.L/2, p.L/2),
-        ylims=(-p.L/2, p.L/2),
+        xlims=(-p.Lx/2, p.Lx/2),
+        ylims=(-p.Ly/2, p.Ly/2),
         clims=(-maximum(abs.(ω)), maximum(abs.(ω))),
         legend=false,
         size=(400, 400),
@@ -26,10 +26,10 @@ function plot_vorticity(ω, p)
     return fig
 end
 
-function main(; n=256, ν=1e-3, T=10)
+function main(; Lx=2π, Ly=2π, nx=256, ny=256, ν=1e-3, T=10)
 
     # --> Parameters for the simulation.
-    p = SimParams(n=n, ν=ν)
+    p = SimParams(Lx=Lx, Ly=Ly, nx=nx, ny=ny, ν=ν)
 
     # --> Dipole initial condition.
     ω = dipole(p)

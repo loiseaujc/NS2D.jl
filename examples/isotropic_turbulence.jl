@@ -9,14 +9,14 @@ function plot_vorticity(ω, p)
 
     ω = real(ifft(ω))
 
-    x = LinRange(-p.L/2, p.L/2, p.n+1)[1:end-1]
+    x, y = mesh(p)
 
     fig = heatmap(
         x, x, ω,
         aspect_ratio=:equal,
         c=cgrad(:RdBu),
-        xlims=(-p.L/2, p.L/2),
-        ylims=(-p.L/2, p.L/2),
+        xlims=(-p.Lx/2, p.Lx/2),
+        ylims=(-p.Ly/2, p.Ly/2),
         clims=(-maximum(abs.(ω)), maximum(abs.(ω)))
     )
 
@@ -31,14 +31,14 @@ function plot_velocity(ω, p)
     #
     velocity_magnitude = .√(u.^2 + v.^2)
 
-    x = LinRange(-p.L/2, p.L/2, p.n+1)[1:end-1]
+    x, y = mesh(p)
 
     fig = heatmap(
-        x, x, velocity_magnitude,
+        x, y, velocity_magnitude,
         aspect_ratio=:equal,
         c=cgrad(:viridis),
-        xlims=(-p.L/2, p.L/2),
-        ylims=(-p.L/2, p.L/2),
+        xlims=(-p.Lx/2, p.Lx/2),
+        ylims=(-p.Ly/2, p.Ly/2),
         clims=(0, maximum(velocity_magnitude)),
     )
 
@@ -65,7 +65,7 @@ function main(; T=1)
     # --> Keyword arguments for DifferentialEquations.jl
     kwargs = Dict(
         :saveat => 0:0.1:T,
-        :callback = > cb
+        :callback => cb
     )
 
     # --> Run the simulation.
