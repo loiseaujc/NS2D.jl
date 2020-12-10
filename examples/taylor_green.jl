@@ -10,7 +10,10 @@ function main(; n=256, ν=1e-3, T=10)
     p = SimParams(n=n, ν=ν)
 
     # --> Taylor-Green initial condition.
-    ω₀ = taylor_green(p)
+    ω₀ = convert(Array{Complex{Float32}, 2}, taylor_green(p))
+
+    # -->
+    prob = UnforcedProblem(p, ω₀)
 
     # --> Time-dependent analytic solution.
     ground_truth(t) = ω₀ .* exp(-2ν*t)
@@ -32,7 +35,7 @@ function main(; n=256, ν=1e-3, T=10)
     )
 
     # --> Run the simulation.
-    simulate(ω₀, p, T ; kwargs...)
+    simulate(prob, T ; kwargs...)
 
     # --> Plot the Taylor-Green vorticity distribution.
     x, y = mesh(p)

@@ -55,6 +55,9 @@ function main(; T=1)
     spectrum(x) = one(x)
     ω = isotropic_turbulence(spectrum, p)
 
+    # -->
+    prob = UnforcedProblem(p, ω)
+
     # --> Callback.
     data = SavedValues(Float64, Float64)
     cb = SavingCallback((u, t, integrator) -> maximum(abs.(u)), data)
@@ -66,7 +69,7 @@ function main(; T=1)
     )
 
     # --> Run the simulation.
-    sol = simulate(ω, p, T ; kwargs...)
+    sol = simulate(prob, T ; kwargs...)
 
     # --> Plot the final condition.
     ω = sol[end]
