@@ -7,7 +7,7 @@ function compute_reynolds_number(ω, p)
      E = mean(vx.^2 + vy.^2)
 
      # --> Reynolds number.
-     Re = √E * p.L / p.ν
+     Re = √E * p.Lx / p.ν
 
     return Re
 end
@@ -15,16 +15,17 @@ end
 function compute_velocity(ω, p)
 
     # --> Extract parameters.
-    L, n = p.L, p.n
+    @unpack Lx, Ly, nx, ny = p
 
     # --> Get the wavenumbers.
-    α = β = fftfreq(n, n/L) * 2π
+    α = fftfreq(nx, nx/Lx) * 2π
+    β = fftfreq(ny, ny/Ly) * 2π
 
     # --> Initialize arrays.
     vx, vy = zero(ω), zero(ω)
 
     # --> Compute the velocity component in spectral space.
-    for j = 1:n, i = 1:n
+    for j = 1:nx, i = 1:ny
 
         # --> Streamfunction.
         k² = α[j]^2 + β[i]^2
@@ -62,10 +63,11 @@ end
 function mesh(p)
 
     # --> Unpack the paramters.
-    @unpack L, n = p
+    @unpack Lx, Ly, nx, ny = p
 
     # --> Construct the one-dimensional meshes.
-    x = y = LinRange(-L/2, L/2, n+1)[1:end-1]
+    x = LinRange(-Lx/2, Lx/2, nx+1)[1:end-1]
+    y = LinRange(-Ly/2, Ly/2, ny+1)[1:end-1]
 
     return x, y
 end

@@ -3,7 +3,7 @@ abstract type NS2DProblem{T<:Real} end
 findparams(::NS2DProblem{T}) where T = T
 
 """
-    SimParams(L=2π, n=256, ν=1e-4)
+    SimParams(Lx=2π, Ly=2π, nx=256, ny=256, ν=1e-4)
 
 Parameters of the simulation. L denotes the size of the doubly
 periodic computational domain, n the number of grid points to
@@ -11,19 +11,34 @@ discretize it in both direction and ν is the kinematic viscosity
 of the working fluid.
 """
 @with_kw struct SimParams
-    # --> Dimension of the domain.
-    L::Float64 = 2π ; @assert L > 0
+    # --> Dimension of the domain in the x-direction.
+    Lx::Float64 = 2π ; @assert Lx > 0
 
-    # --> Number of grid points per direction.
-    n::Int = 256 ; @assert mod(n, 2) == 0
+    # --> Dimension of the domain in the y-direction.
+    Ly::Float64 = 2π ; @assert Ly > 0
+
+    # --> Number of grid points in the x-direction.
+    nx::Int = 256 ; @assert mod(nx, 2) == 0
+
+    # --> Number of grid points in the x-direction.
+    ny::Int = 256 ; @assert mod(ny, 2) == 0
 
     # --> Viscosity.
     ν::Float64 = 1e-4 ; @assert ν > 0
 end
 
+#####################################
+#####                           #####
+#####     UNFORCED DYNAMICS     #####
+#####                           #####
+#####################################
+
 mutable struct UnforcedProblem{T} <: NS2DProblem{T}
-    # --> Number of grid points.
-    n::Int64
+    # --> Number of grid points in the x-direction.
+    nx::Int64
+
+    # --> Number of grid points in the x-direction.
+    ny::Int64
 
     # --> Viscosity.
     ν::T
@@ -35,7 +50,7 @@ mutable struct UnforcedProblem{T} <: NS2DProblem{T}
     # --> Initial condition.
     ω₀::Array{Complex{T}, 2}
 
-    # --> Workiing arrays for the computation of the advection term.
+    # --> Working arrays for the computation of the advection term.
     adv::Array{Complex{T},2}
     ∂ω∂x::Array{Complex{T},2}
     ∂ω∂y::Array{Complex{T},2}
@@ -53,39 +68,28 @@ end
 function UnforcedProblem(p::SimParams, x::Array{Complex{T}, 2}) where T <: Real
 
     # --> Extract the parameters of the simulation.
-    @unpack L, n, ν = p
+    @unpack Lx, Ly, nx, ny, ν = p
 
     # --> Compute the wavenumbers.
-    α = fftfreq(n, n/L) * 2π
+    α = fftfreq(nx, nx/Lx) * 2π
+    β = fftfreq(ny, ny/Ly) * 2π
 
     # --> Convert ν and α to whatever type T is.
     ν = convert(T, ν)
     α = convert(Array{T, 1}, α)
+    β = convert(Array{T, 1}, β)
 
     # --> Template for the padded arrays.
-    y = zeros(eltype(x), (3n÷2, 3n÷2))
+    y = zeros(eltype(x), (3ny÷2, 3nx÷2))
 
     # --> Return the container.
     prob = UnforcedProblem(
-        n, ν, α, α, x,
+        nx, ny, ν, α, β, x,
         zero(x), zero(x), zero(x), zero(x), zero(x),
         zero(y), zero(y), zero(y), zero(y), zero(y)
     )
 
     return prob
-end
-
-
-function simulate(nsprob::UnforcedProblem, T ; alg=Tsit5(), kwargs...)
-
-    # --> Set the ODE Problem.
-    tspan = (zero(findparams(nsprob)), convert(findparams(nsprob), T))
-    prob = ODEProblem(unforced_dynamics!, copy(nsprob.ω₀), tspan, nsprob)
-
-    # --> Integrate forward in time.
-    sol = solve(prob, alg ; kwargs...)
-
-    return sol
 end
 
 function unforced_dynamics!(dΩ::Array{Complex{T},2}, Ω::Array{Complex{T},2}, p::UnforcedProblem{T}, t::T) where T <: Real
@@ -97,14 +101,14 @@ function unforced_dynamics!(dΩ::Array{Complex{T},2}, Ω::Array{Complex{T},2}, p
     advp, ∂ω∂xp, ∂ω∂yp, up, vp = p.advp, p.∂ω∂xp, p.∂ω∂yp, p.up, p.vp
 
     # --> Compute all required quantities in spectral space.
-    @inbounds for j = 1:p.n÷2
-        @inbounds @simd for i = 1:p.n
+    @inbounds for j = 1:p.nx
+        @inbounds @simd for i = 1:p.ny
             # --> Misc.
             ω, α, β = Ω[i, j], p.α[j], p.β[i]
             k² = α^2 + β^2
 
             # --> Solve for the streamfunction.
-            ψ = i == 1 && j == 1 ? zero(ω) : ω/k²
+            ψ = i == j == 1 ? zero(ω) : ω/k²
 
             # --> Diffusion term.
             dΩ[i, j] = -p.ν * k² * ω
@@ -119,11 +123,11 @@ function unforced_dynamics!(dΩ::Array{Complex{T},2}, Ω::Array{Complex{T},2}, p
         end
     end
 
-    # --> Enforce the Hermitian symmetry in the Fourier transform
-    #     since the loop above only acted on half the frequency space.
-    enforce_hermitian_symmetry!(dΩ)
-    enforce_hermitian_symmetry!(∂ω∂x), enforce_hermitian_symmetry!(∂ω∂y)
-    enforce_hermitian_symmetry!(u), enforce_hermitian_symmetry!(v)
+    # # --> Enforce the Hermitian symmetry in the Fourier transform
+    # #     since the loop above only acted on half the frequency space.
+    # enforce_hermitian_symmetry!(dΩ)
+    # enforce_hermitian_symmetry!(∂ω∂x), enforce_hermitian_symmetry!(∂ω∂y)
+    # enforce_hermitian_symmetry!(u), enforce_hermitian_symmetry!(v)
 
     # --> Padding in spectral space.
     spectral_pad!(up, u), spectral_pad!(vp, v)
@@ -138,7 +142,8 @@ function unforced_dynamics!(dΩ::Array{Complex{T},2}, Ω::Array{Complex{T},2}, p
 
     # --> Compute the left-hand side.
     dΩ .-= adv
-    dΩ[:, p.n÷2+1] = dΩ[p.n÷2+1, :] .= 0
+    dΩ[:, p.nx÷2+1] .= 0
+    dΩ[p.ny÷2+1, :] .= 0
 
     return
 end
@@ -155,24 +160,39 @@ end
 
 function spectral_pad!(y, x)
 
-    n = size(x, 1)
+    ny, nx = size(x)
 
-    y[1:n÷2, 1:n÷2] = x[1:n÷2, 1:n÷2]
-    y[1:n÷2, end-n÷2+1:end] = x[1:n÷2, n÷2+1:end]
-    y[end-n÷2+1:end, 1:n÷2] = x[n÷2+1:end, 1:n÷2]
-    y[end-n÷2+1:end, end-n÷2+1:end] = x[n÷2+1:end, n÷2+1:end]
+    y[1:ny÷2, 1:nx÷2] = x[1:ny÷2, 1:nx÷2]
+    y[1:ny÷2, end-nx÷2+1:end] = x[1:ny÷2, nx÷2+1:end]
+    y[end-ny÷2+1:end, 1:nx÷2] = x[ny÷2+1:end, 1:nx÷2]
+    y[end-ny÷2+1:end, end-nx÷2+1:end] = x[ny÷2+1:end, nx÷2+1:end]
 
     return
 end
 
 function spectral_chop!(y, x)
 
-    n = size(y, 1)
+    ny, nx = size(y)
 
-    y[1:n÷2, 1:n÷2] = x[1:n÷2, 1:n÷2]
-    y[1:n÷2, n÷2+1:end] = x[1:n÷2, end-n÷2+1:end]
-    y[n÷2+1:end, 1:n÷2] = x[end-n÷2+1:end, 1:n÷2]
-    y[n÷2+1:end, n÷2+1:end] = x[end-n÷2+1:end, end-n÷2+1:end]
+    y[1:ny÷2, 1:nx÷2] = x[1:ny÷2, 1:nx÷2]
+    y[1:ny÷2, nx÷2+1:end] = x[1:ny÷2, end-nx÷2+1:end]
+    y[ny÷2+1:end, 1:nx÷2] = x[end-ny÷2+1:end, 1:nx÷2]
+    y[ny÷2+1:end, nx÷2+1:end] = x[end-ny÷2+1:end, end-nx÷2+1:end]
 
     return
+end
+
+function simulate(nsprob::UnforcedProblem, T ; alg=Tsit5(), kwargs...)
+
+    # --> Type of numbers used.
+    N = findparams(nsprob)
+
+    # --> Set the ODE Problem.
+    tspan = (zero(N), convert(N, T))
+    prob = ODEProblem(unforced_dynamics!, copy(nsprob.ω₀), tspan, nsprob)
+
+    # --> Integrate forward in time.
+    sol = solve(prob, alg ; kwargs...)
+
+    return sol
 end

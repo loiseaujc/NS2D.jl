@@ -1,20 +1,21 @@
 function isotropic_turbulence(spectrum, p)
 
     # --> Get the simulation parameters.
-    L, n, ν = p.L, p.n, p.ν
+    @unpack Lx, Ly, nx, ny = p
 
     # --> Wavenumbers.
-    α = β = fftfreq(n, n/L) * 2π
+    α = fftfreq(nx, nx/Lx) * 2π
+    β = fftfreq(ny, ny/Ly) * 2π
 
     # --> Random Fourier modes with unit energy.
-    ω = randn(n, n)
+    ω = randn(ny, nx)
     ω .-= mean(ω)
 
     ω = fft(ω)
     ω ./= abs.(ω)
 
     # --> Apply the isotropic enstrophy spectrum
-    for j = 1:n, i = 1:n
+    for j = 1:nx, i = 1:ny
         # --> Wavenumber
         k = √(α[j]^2 + β[i]^2)
 
@@ -23,7 +24,8 @@ function isotropic_turbulence(spectrum, p)
     end
 
     # --> Zero-out the last wavenumber.
-    ω[:, n÷2+1] = ω[n÷2+1, :] .= 0
+    ω[:, nx÷2+1] .= 0
+    ω[ny÷2+1, :] .= 0
 
     # --> Scale the vorticity field to the desired Reynolds number.
     ω = scale_by_re(ω, p)
@@ -34,7 +36,7 @@ end
 function scale_by_re(ω, p)
 
     # --> Simulation parameters.
-    L, n, ν = p.L, p.n, p.ν
+    @unpack Lx, Ly, nx, ny = p
 
     # --> Rescale the vorticity field to enforce the desired Re.
     u, v = compute_velocity(ω, p)
@@ -49,15 +51,16 @@ end
 function isolated_vortex(x, y ; x₀=0.0, y₀=0.0, Γ=1.0, r=1.0)
 
     # --> Center the mesh around the (x₀, y₀) position.
-    L = maximum(abs.(x))
+    Lx = maximum(abs.(x))
+    Ly = maximum(abs.(y))
     x, y = collect(x .- x₀), collect(y .- y₀)
 
     # --> Enforce periodicity.
-    x[x .> L] .= x[x .> L] .- 2L
-    x[x .< -L] .= x[x .< -L] .+ 2L
+    x[x .> Lx] .= x[x .> Lx] .- 2Lx
+    x[x .< -Lx] .= x[x .< -Lx] .+ 2Lx
 
-    y[y .> L] .= y[y .> L] .- 2L
-    y[y .< -L] .= y[y .< -L] .+ 2L
+    y[y .> Ly] .= y[y .> Ly] .- 2Ly
+    y[y .< -Ly] .= y[y .< -Ly] .+ 2Ly
 
     # --> Isolated vortex vorticity field.
     r² = (x').^2 .+ y.^2
@@ -72,7 +75,7 @@ end
 function dipole(p)
 
     # --> Unpack parameters.
-    @unpack L, n, ν = p
+    @unpack Lx, Ly, nx, ny = p
 
     # --> Get mesh.
     x, y = mesh(p)
