@@ -15,6 +15,10 @@ module NS2D
     include("core.jl")
     export SimParams, UnforcedProblem, simulate
 
+    # --> Kolmogorov Flow.
+    include("kolmogorov.jl")
+    export KolmogorovFlow
+
     # --> Initial conditions related.
     include("ic.jl")
     export isotropic_turbulence, isolated_vortex, dipole, taylor_green

@@ -20,7 +20,7 @@ of the working fluid.
     # --> Number of grid points in the x-direction.
     nx::Int = 256 ; @assert mod(nx, 2) == 0
 
-    # --> Number of grid points in the x-direction.
+    # --> Number of grid points in the y-direction.
     ny::Int = 256 ; @assert mod(ny, 2) == 0
 
     # --> Viscosity.
@@ -182,6 +182,8 @@ function spectral_chop!(y, x)
     return
 end
 
+rhs!(dΩ::Array{Complex{T},2}, Ω::Array{Complex{T},2}, p::UnforcedProblem{T}, t::T) where T <: Real = unforced_dynamics!(dΩ::Array{Complex{T},2}, Ω::Array{Complex{T},2}, p::UnforcedProblem{T}, t::T)
+
 function simulate(nsprob::UnforcedProblem, T ; alg=Tsit5(), kwargs...)
 
     # --> Type of numbers used.
@@ -189,7 +191,7 @@ function simulate(nsprob::UnforcedProblem, T ; alg=Tsit5(), kwargs...)
 
     # --> Set the ODE Problem.
     tspan = (zero(N), convert(N, T))
-    prob = ODEProblem(unforced_dynamics!, copy(nsprob.ω₀), tspan, nsprob)
+    prob = ODEProblem(rhs!, copy(nsprob.ω₀), tspan, nsprob)
 
     # --> Integrate forward in time.
     sol = solve(prob, alg ; kwargs...)
